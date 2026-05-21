@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SSS Trainings - Consultancy Dashboard</title>
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- XLSX Reader -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+  <style>
+
+    body{
+      background:#f4f7fb;
+      font-family:Arial, Helvetica, sans-serif;
+    }
+
+    /* HEADER */
+    .top-header{
+      background:linear-gradient(90deg,#0d47a1,#1976d2);
+      color:white;
+      padding:20px 30px;
+      border-radius:0 0 15px 15px;
+      margin-bottom:20px;
+    }
+
+    .logo-box{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:15px;
+      flex-wrap:wrap;
+      text-align:center;
+    }
+
+    .logo-box img{
+      width:80px;
+      height:80px;
+      object-fit:contain;
+      background:white;
+      padding:5px;
+      border-radius:12px;
+    }
+
+    .company-title h2{
+      margin:0;
+      font-size:30px;
+      font-weight:bold;
+    }
+
+    .company-title p{
+      margin:0;
+      font-size:15px;
+    }
+
+    /* SECTION TITLE */
+    .section-title{
+      font-weight:bold;
+      color:#0d47a1;
+      margin-bottom:15px;
+    }
+
+    /* CARDS */
+    .card-box{
+      border:none;
+      border-radius:15px;
+      box-shadow:0px 4px 10px rgba(0,0,0,0.1);
+      transition:0.3s;
+    }
+
+    .card-box:hover{
+      transform:translateY(-5px);
+    }
+
+    .metric{
+      font-size:28px;
+      font-weight:bold;
+    }
+
+    /* UPLOAD BOX */
+    .upload-box{
+      border:2px dashed #1976d2;
+      padding:20px;
+      border-radius:10px;
+      background:white;
+      text-align:center;
+    }
+
+    /* TABLE */
+    table{
+      font-size:14px;
+    }
+
+    /* COLORS */
+    .training-bg{
+      background:#e3f2fd;
+    }
+
+    .consult-bg{
+      background:#fff3e0;
+    }
+
+    /* CHART */
+    .chart-container{
+      width:40%;
+      margin:auto;
+    }
+
+    @media(max-width:768px){
+
+      .chart-container{
+        width:80%;
+      }
+
+      .company-title h2{
+        font-size:22px;
+      }
+
+    }
+
+  </style>
+
+</head>
+
+<body>
+
+<div class="container-fluid">
+
+  <!-- HEADER -->
+  <div class="top-header">
+
+    <div class="logo-box">
+
+      <!-- COPY YOUR LOGO INTO PROJECT FOLDER -->
+      <img src="logo.png" alt="Company Logo">
+
+      <div class="company-title">
+        <h2>SSS Trainings - Consultancy Dashboard</h2>
+        <p>Training & Consultancy Management System</p>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- FILE UPLOAD -->
+  <div class="row mb-4">
+
+    <div class="col-md-12">
+
+      <div class="upload-box">
+
+        <h5>Upload Excel File</h5>
+
+        <input
+          type="file"
+          id="excelFile"
+          class="form-control mt-3"
+          accept=".xlsx,.xls">
+
+        <small class="text-muted">
+          Excel should contain sheets:
+          <b>Training</b> and <b>Consultancy</b>
+        </small>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- TRAINING SECTION -->
+  <div class="row mb-4">
+
+    <div class="col-md-12">
+      <h3 class="section-title">Training Dashboard</h3>
+    </div>
+
+    <!-- CARD 1 -->
+    <div class="col-md-3">
+      <div class="card card-box training-bg p-3">
+        <h6>Total Students</h6>
+        <div class="metric" id="totalStudents">0</div>
+      </div>
+    </div>
+
+    <!-- CARD 2 -->
+    <div class="col-md-3">
+      <div class="card card-box training-bg p-3">
+        <h6>Total Fees</h6>
+        <div class="metric" id="totalFees">₹0</div>
+      </div>
+    </div>
+
+    <!-- CARD 3 -->
+    <div class="col-md-3">
+      <div class="card card-box training-bg p-3">
+        <h6>Collected Fees</h6>
+        <div class="metric text-success" id="collectedFees">₹0</div>
+      </div>
+    </div>
+
+    <!-- CARD 4 -->
+    <div class="col-md-3">
+      <div class="card card-box training-bg p-3">
+        <h6>Pending Balance</h6>
+        <div class="metric text-danger" id="pendingFees">₹0</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- TRAINING TABLE + CHART -->
+  <div class="row mb-5">
+
+    <!-- TABLE -->
+    <div class="col-md-7">
+
+      <div class="card card-box p-3">
+
+        <!-- HEADER + FILTER -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+
+          <h5>Student Details</h5>
+
+          <select
+            id="courseFilter"
+            class="form-select"
+            style="width:250px;"
+            onchange="filterCourse()">
+
+            <option value="ALL">All Courses</option>
+
+          </select>
+
+        </div>
+
+        <!-- TABLE -->
+        <div class="table-responsive">
+
+          <table class="table table-bordered table-striped">
+
+            <thead class="table-primary">
+
+              <tr>
+                <th>Name</th>
+                <th>Course</th>
+                <th>Total Fees</th>
+                <th>Paid</th>
+                <th>Balance</th>
+              </tr>
+
+            </thead>
+
+            <tbody id="trainingTable"></tbody>
+
+          </table>
+
+        </div>
+
+        <!-- PAGINATION -->
+        <div class="d-flex justify-content-between align-items-center mt-3">
+
+          <button
+            class="btn btn-primary"
+            onclick="previousPage()">
+
+            Previous
+
+          </button>
+
+          <span id="pageInfo" class="fw-bold"></span>
+
+          <button
+            class="btn btn-primary"
+            onclick="nextPage()">
+
+            Next
+
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- CHART -->
+    <div class="col-md-5">
+
+      <div class="card card-box p-3 text-center">
+
+        <h5>Training Fee Overview</h5>
+
+        <div class="chart-container">
+          <canvas id="trainingChart"></canvas>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- CONSULTANCY SECTION -->
+  <div class="row mb-4">
+
+    <div class="col-md-12">
+      <h3 class="section-title">Consultancy Dashboard</h3>
+    </div>
+
+    <!-- CARD 1 -->
+    <div class="col-md-3">
+      <div class="card card-box consult-bg p-3">
+        <h6>Total Clients</h6>
+        <div class="metric" id="totalClients">0</div>
+      </div>
+    </div>
+
+    <!-- CARD 2 -->
+    <div class="col-md-3">
+      <div class="card card-box consult-bg p-3">
+        <h6>Total Transactions</h6>
+        <div class="metric" id="totalTransactions">₹0</div>
+      </div>
+    </div>
+
+    <!-- CARD 3 -->
+    <div class="col-md-3">
+      <div class="card card-box consult-bg p-3">
+        <h6>Received</h6>
+        <div class="metric text-success" id="receivedAmount">₹0</div>
+      </div>
+    </div>
+
+    <!-- CARD 4 -->
+    <div class="col-md-3">
+      <div class="card card-box consult-bg p-3">
+        <h6>Pending</h6>
+        <div class="metric text-danger" id="pendingAmount">₹0</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- CONSULTANCY TABLE + CHART -->
+  <div class="row mb-5">
+
+    <!-- TABLE -->
+    <div class="col-md-7">
+
+      <div class="card card-box p-3">
+
+        <h5>Consultancy Details</h5>
+
+        <div class="table-responsive">
+
+          <table class="table table-bordered table-striped">
+
+            <thead class="table-warning">
+
+              <tr>
+                <th>Client</th>
+                <th>Project</th>
+                <th>Total</th>
+                <th>Received</th>
+                <th>Pending</th>
+              </tr>
+
+            </thead>
+
+            <tbody id="consultancyTable"></tbody>
+
+          </table>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- CHART -->
+    <div class="col-md-5">
+
+      <div class="card card-box p-3 text-center">
+
+        <h5>Consultancy Overview</h5>
+
+        <div class="chart-container">
+          <canvas id="consultancyChart"></canvas>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+
+let trainingChart;
+let consultancyChart;
+
+/* STORE TRAINING DATA */
+let trainingDataGlobal = [];
+let filteredTrainingData = [];
+
+let currentPage = 1;
+const rowsPerPage = 5;
+
+/* FILE UPLOAD */
+document
+  .getElementById('excelFile')
+  .addEventListener('change', handleFile);
+
+/* READ EXCEL */
+function handleFile(e){
+
+  const file = e.target.files[0];
+
+  const reader = new FileReader();
+
+  reader.onload = function(event){
+
+    const data =
+    new Uint8Array(event.target.result);
+
+    const workbook =
+    XLSX.read(data, { type: 'array' });
+
+    /* TRAINING */
+    const trainingSheet =
+    workbook.Sheets['Training'];
+
+    if(trainingSheet){
+
+      const trainingData =
+      XLSX.utils.sheet_to_json(trainingSheet);
+
+      loadTraining(trainingData);
+
+    }
+
+    /* CONSULTANCY */
+    const consultancySheet =
+    workbook.Sheets['Consultancy'];
+
+    if(consultancySheet){
+
+      const consultancyData =
+      XLSX.utils.sheet_to_json(consultancySheet);
+
+      loadConsultancy(consultancyData);
+
+    }
+
+  };
+
+  reader.readAsArrayBuffer(file);
+
+}
+
+/* LOAD TRAINING */
+function loadTraining(data){
+
+  trainingDataGlobal = data;
+
+  filteredTrainingData = data;
+
+  currentPage = 1;
+
+  loadCourseDropdown(data);
+
+  updateTrainingDashboard(filteredTrainingData);
+
+}
+
+/* UPDATE TRAINING DASHBOARD */
+function updateTrainingDashboard(data){
+
+  let totalFees = 0;
+  let paidFees = 0;
+  let pendingFees = 0;
+
+  document.getElementById('trainingTable').innerHTML = "";
+
+  /* TOTAL CALCULATIONS */
+  data.forEach(item => {
+
+    totalFees += Number(item.TotalFees || 0);
+    paidFees += Number(item.Paid || 0);
+    pendingFees += Number(item.Balance || 0);
+
+  });
+
+  /* PAGINATION */
+  const start =
+  (currentPage - 1) * rowsPerPage;
+
+  const end =
+  start + rowsPerPage;
+
+  const paginatedData =
+  data.slice(start, end);
+
+  /* TABLE DATA */
+  paginatedData.forEach(item => {
+
+    document.getElementById('trainingTable').innerHTML += `
+
+      <tr>
+        <td>${item.Name}</td>
+        <td>${item.Course}</td>
+        <td>₹${item.TotalFees}</td>
+        <td>₹${item.Paid}</td>
+        <td>₹${item.Balance}</td>
+      </tr>
+
+    `;
+
+  });
+
+  /* UPDATE CARDS */
+  document.getElementById('totalStudents').innerText =
+  data.length;
+
+  document.getElementById('totalFees').innerText =
+  "₹" + totalFees;
+
+  document.getElementById('collectedFees').innerText =
+  "₹" + paidFees;
+
+  document.getElementById('pendingFees').innerText =
+  "₹" + pendingFees;
+
+  /* PAGE INFO */
+  const totalPages =
+  Math.ceil(data.length / rowsPerPage);
+
+  document.getElementById('pageInfo').innerText =
+  `Page ${currentPage} of ${totalPages}`;
+
+  /* CHART */
+  if(trainingChart){
+    trainingChart.destroy();
+  }
+
+  trainingChart = new Chart(
+    document.getElementById('trainingChart'),
+    {
+
+      type: 'doughnut',
+
+      data: {
+
+        labels: ['Collected', 'Pending'],
+
+        datasets: [{
+
+          data: [paidFees, pendingFees]
+
+        }]
+
+      },
+
+      options: {
+
+        responsive: true,
+        maintainAspectRatio: true
+
+      }
+
+    }
+
+  );
+
+}
+
+/* LOAD COURSE DROPDOWN */
+function loadCourseDropdown(data){
+
+  const dropdown =
+  document.getElementById('courseFilter');
+
+  dropdown.innerHTML =
+  `<option value="ALL">All Courses</option>`;
+
+  const uniqueCourses =
+  [...new Set(data.map(item => item.Course))];
+
+  uniqueCourses.forEach(course => {
+
+    dropdown.innerHTML +=
+    `<option value="${course}">${course}</option>`;
+
+  });
+
+}
+
+/* FILTER COURSE */
+function filterCourse(){
+
+  const selectedCourse =
+  document.getElementById('courseFilter').value;
+
+  filteredTrainingData = trainingDataGlobal;
+
+  if(selectedCourse !== "ALL"){
+
+    filteredTrainingData =
+    trainingDataGlobal.filter(item =>
+      item.Course === selectedCourse
+    );
+
+  }
+
+  currentPage = 1;
+
+  updateTrainingDashboard(filteredTrainingData);
+
+}
+
+/* NEXT PAGE */
+function nextPage(){
+
+  const totalPages =
+  Math.ceil(filteredTrainingData.length / rowsPerPage);
+
+  if(currentPage < totalPages){
+
+    currentPage++;
+
+    updateTrainingDashboard(filteredTrainingData);
+
+  }
+
+}
+
+/* PREVIOUS PAGE */
+function previousPage(){
+
+  if(currentPage > 1){
+
+    currentPage--;
+
+    updateTrainingDashboard(filteredTrainingData);
+
+  }
+
+}
+
+/* LOAD CONSULTANCY */
+function loadConsultancy(data){
+
+  let totalAmount = 0;
+  let received = 0;
+  let pending = 0;
+
+  document.getElementById('consultancyTable').innerHTML = "";
+
+  data.forEach(item => {
+
+    totalAmount += Number(item.Total || 0);
+    received += Number(item.Received || 0);
+    pending += Number(item.Pending || 0);
+
+    document.getElementById('consultancyTable').innerHTML += `
+
+      <tr>
+        <td>${item.Client}</td>
+        <td>${item.Project}</td>
+        <td>₹${item.Total}</td>
+        <td>₹${item.Received}</td>
+        <td>₹${item.Pending}</td>
+      </tr>
+
+    `;
+
+  });
+
+  /* UPDATE CARDS */
+  document.getElementById('totalClients').innerText =
+  data.length;
+
+  document.getElementById('totalTransactions').innerText =
+  "₹" + totalAmount;
+
+  document.getElementById('receivedAmount').innerText =
+  "₹" + received;
+
+  document.getElementById('pendingAmount').innerText =
+  "₹" + pending;
+
+  /* DESTROY OLD CHART */
+  if(consultancyChart){
+    consultancyChart.destroy();
+  }
+
+  /* CREATE CHART */
+  consultancyChart = new Chart(
+    document.getElementById('consultancyChart'),
+    {
+
+      type: 'pie',
+
+      data: {
+
+        labels: ['Received', 'Pending'],
+
+        datasets: [{
+
+          data: [received, pending]
+
+        }]
+
+      },
+
+      options: {
+
+        responsive: true,
+        maintainAspectRatio: true
+
+      }
+
+    }
+
+  );
+
+}
+
+</script>
+
+</body>
+</html>
